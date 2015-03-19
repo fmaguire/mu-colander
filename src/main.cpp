@@ -28,6 +28,8 @@ int main(int argc, char* argv[])
     //create GUI windows
     cv::namedWindow("Frame");
     cv::namedWindow("FG Mask MOG 2");
+    cv::namedWindow("fg_img");
+    cv::namedWindow("bg_img");
 
     processVideo(argv[1]);
     
@@ -59,7 +61,7 @@ void processVideo(char* videoFilename) {
         std::exit(1);
     }
 
-
+    cv::Mat fg_img; 
     //read input data. ESC or 'q' for quitting
     while( (char)keyboard != 'q' && (char)keyboard != 27 ){
         //read the current frame
@@ -76,6 +78,15 @@ void processVideo(char* videoFilename) {
 
         cv::GaussianBlur(fg_mask, fg_mask, cv::Size(15, 15), 3, 3);
         //cv::threshold(fg_mask, fg_mask, 5, 200, 0);
+        
+
+        
+        fg_img = cv::Scalar::all(0);
+        frame.copyTo(fg_img, fg_mask);
+
+        cv::Mat bg_img;
+        pMOG2->getBackgroundImage(bg_img);
+
 
 
         //get the frame number and write it on the current frame
@@ -89,6 +100,8 @@ void processVideo(char* videoFilename) {
 
         //show the current frame and the fg masks
         cv::imshow("Frame", frame);
+        cv::imshow("fg_img", fg_img);
+        cv::imshow("bg_img", bg_img);
         cv::imshow("FG Mask MOG 2", fg_mask);
         ////get the input from the keyboard
         keyboard = cv::waitKey( 30 );
