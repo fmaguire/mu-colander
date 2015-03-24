@@ -29,3 +29,5 @@ bin/*
 # vim
 *.swp
 
+# videos
+*.avi
