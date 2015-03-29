@@ -13,7 +13,7 @@ OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 CFLAGS := -g -Wall -std=c++11 
 
 LIB := -lopencv_core -lopencv_highgui -lopencv_videoio -lopencv_imgproc -lopencv_video -lopencv_imgcodecs
-INC := -I /usr/local/include 
+INC := -I /usr/local/include -I include/
 #$(pkg-config --cflags opencv) 
 
 $(TARGET) : $(OBJECTS)
@@ -31,6 +31,9 @@ clean:
 
 test : $(TARGET)
 	./$(TARGET) test/40x-coastal-3rdchannel_1033-1221.avi
+
+test2 : $(TARGET)
+	python2.7 test2.py test/40x-coastal-3rdchannel_1033-1221.avi
 
 .PHONY: clean test
 

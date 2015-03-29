@@ -31,3 +31,7 @@ bin/*
 
 # videos
 *.avi
+
+# data
+data/*
+out/*.png
