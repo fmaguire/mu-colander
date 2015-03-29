@@ -12,14 +12,16 @@
 /** Main */
 int main(int argc, char* argv[])
 {
-
     //check for the input parameter correctness
     if(argc != 2 || strcmp(argv[1], "-h") == 0) {
         std::cerr << "Usage: " << argv[0] << " video.avi" << std::endl;
         std::exit(1);
     }
     
+    // create display windows
     create_windows();
+
+    // process video
     processVideo(argv[1]);
     
     //destroy GUI windows

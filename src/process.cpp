@@ -9,64 +9,85 @@
 
 #include "utils.hpp"
 
-void processVideo(char* videoFilename) {
+cv::Mat filter(cv::Ptr<cv::BackgroundSubtractor> subtractor,
+               cv::Mat current_frame, 
+               cv::Mat current_mask){
 
-    cv::Mat frame; 
-    cv::Mat fg_mask; 
-    cv::Mat fg_img;
-    //cv::Mat bg_img;
-
-
-    int out_index;
-    cv::Ptr<cv::BackgroundSubtractor> pKNN = cv::createBackgroundSubtractorKNN();
+    //update the background model
+    subtractor->apply(current_frame, current_mask);
     
-    int keyboard; //input from keyboard
+    //apply cleaning kernel
+    cv::threshold(current_mask, current_mask, 10, 255, 0);
+    cv::GaussianBlur(current_mask, current_mask, cv::Size(5, 5), 4, 4);
     
+    return current_mask;
+}
 
-    //create the capture object
-    cv::VideoCapture capture(videoFilename);
+cv::VideoCapture parse_video(char* filename){
+
+    cv::VideoCapture capture(filename);
     if(!capture.isOpened()){
         //error in opening the video input
-        std::cerr << "Unable to open video file: " << videoFilename << std::endl;
+        std::cerr << "Unable to open video file: " << filename << std::endl;
         std::exit(1);
     }
+    return capture;
+    
+}
+
+cv::Mat next_frame(cv::VideoCapture cap){
+    cv::Mat frame;
+    //read the current frame
+    if(!cap.read(frame)) {
+        std::cerr << "Unable to read next frame." << std::endl;
+        std::cerr << "Video Finished: Exiting." << std::endl;
+        std::exit(0);
+    }
+    
+    return frame;
+}
+
+
+
+void processVideo(char* videoFilename) {
+    
+    int keyboard; //input from keyboard
+
+    cv::Mat frame;   // video frame
+    cv::Mat fg_mask; // masked frame
+    cv::Mat fg_img;  // current mask applied to frame
+    
+    // backgroundsubtractor
+    cv::Ptr<cv::BackgroundSubtractor> pKNN = cv::createBackgroundSubtractorKNN();
+   
+    // parse video
+    cv::VideoCapture video = parse_video(videoFilename);
+    
+    int out_index;
 
     //read input data. ESC or 'q' for quitting
     while( (char)keyboard != 'q' && (char)keyboard != 27 ){
         
-
-        //read the current frame
-        if(!capture.read(frame)) {
-            std::cerr << "Unable to read next frame." << std::endl;
-            std::cerr << "Video Finished: Exiting." << std::endl;
-            std::exit(0);
-        }
-        
+        frame = next_frame(video);
+       
         cv::Size frame_dim = frame.size();
         cv::Rect roi(frame_dim.width / 2, 0, 50, frame_dim.height);
         cv::Mat image_roi;
         
-        // place region of interest
+        fg_mask = filter(pKNN, frame, fg_mask);
 
-        //update the background model
-        pKNN->apply(frame, fg_mask);
         
-
-        //apply cleaning kernel
-        cv::threshold(fg_mask, fg_mask, 10, 255, 0);
-        cv::GaussianBlur(fg_mask, fg_mask, cv::Size(5, 5), 4, 4);
-
+        // place region of interest
         fg_img = cv::Scalar::all(0);
         frame.copyTo(fg_img, fg_mask);
         image_roi = fg_img(roi);
         
-        add_frame_number(capture, frame);
-
+        add_frame_number(video, frame);
+        
         //show the current frame and the fg masks
         cv::imshow("frame", frame);
         //cv::imshow("fg_img", fg_img);
         cv::imshow("fg_mask", fg_mask);
-
         cv::imshow("roi", image_roi);
 
         int presence = cv::sum(cv::sum(image_roi))[0];
@@ -83,6 +104,8 @@ void processVideo(char* videoFilename) {
             keyboard = cv::waitKey(0);
         }
     }
+
+
     //delete capture object
-    capture.release();
+    video.release();
 }
