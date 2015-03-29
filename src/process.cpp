@@ -24,44 +24,26 @@ cv::Mat filter(cv::Ptr<cv::BackgroundSubtractor> subtractor,
     return current_mask;
 }
 
+cv::Mat grey_scale(cv::Mat colour_frame){
+    cv::Mat grey_frame;
+    cv::cvtColor(colour_frame, grey_frame, cv::COLOR_BGR2GRAY);
+    return grey_frame;
+}
 
-cv::Mat subtract(cv::Mat bg_frame,
-                 cv::Mat current_frame, 
-                 cv::Mat current_mask){
-    
-    cv::absdiff(current_frame, bg_frame, current_mask);
+
+cv::Mat blur(cv::Mat frame){
+    cv::Mat blur_frame;
+    cv::GaussianBlur(frame, blur_frame, cv::Size(3, 3), 1, 1.5);
+    return blur_frame;
+}
+
+cv::Mat subtract_frame(cv::Mat bg_frame,
+                 cv::Mat current_frame){
+      
+    cv::Mat current_mask;
+    cv::absdiff(bg_frame, current_frame, current_mask);
     
     return current_mask;
-}
-
-
-cv::VideoCapture parse_video(char* filename){
-
-    cv::VideoCapture capture(filename);
-    if(!capture.isOpened()){
-        //error in opening the video input
-        std::cerr << "Unable to open video file: " << filename << std::endl;
-        std::exit(1);
-    }
-    return capture;
-    
-}
-
-
-cv::Mat next_frame(cv::VideoCapture cap){
-    cv::Mat colour_frame;
-    cv::Mat grey_frame;
-    //read the current frame
-    if(!cap.read(colour_frame)) {
-        std::cerr << "Unable to read next frame." << std::endl;
-        std::cerr << "Video Finished: Exiting." << std::endl;
-        std::exit(0);
-    }
-    
-    // convert frame to greyscale
-    cv::cvtColor(colour_frame, grey_frame, cv::COLOR_BGR2GRAY);
-
-    return grey_frame;
 }
 
 
@@ -72,6 +54,7 @@ void processVideo(char* videoFilename) {
     cv::Mat frame;   // video frame
     cv::Mat fg_mask; // masked frame
     cv::Mat fg_img;  // current mask applied to frame
+    cv::Mat bg_frame;  // current mask applied to frame
     
     // backgroundsubtractor
     cv::Ptr<cv::BackgroundSubtractor> pKNN = cv::createBackgroundSubtractorKNN();
@@ -79,7 +62,8 @@ void processVideo(char* videoFilename) {
     // parse video
     cv::VideoCapture video = parse_video(videoFilename);
     
-    int out_index;
+    //int out_index;
+    bool first = true;
 
     //read input data. ESC or 'q' for quitting
     while( (char)keyboard != 'q' && (char)keyboard != 27 ){
@@ -87,8 +71,20 @@ void processVideo(char* videoFilename) {
         // get next frame or exit if end of video
         frame = next_frame(video);
         
+        // convert to greyscale
+        frame = grey_scale(frame);
+
+       
+        if( first ) {
+            bg_frame = frame;
+            first = false;
+        }
+
         // filter frame
         fg_mask = filter(pKNN, frame, fg_mask);
+        
+        // add blur
+        fg_mask = blur(fg_mask);
         
         // intialise region of interest objects
         // ROI is a rectangle 50 pixels wide in the middle of the frame
@@ -103,7 +99,6 @@ void processVideo(char* videoFilename) {
         
         // annotate frame with current frame_number
         add_frame_number(video, frame);
-            
         
         // Display the current frame and the fg masks
         cv::imshow("frame", frame);
@@ -113,6 +108,7 @@ void processVideo(char* videoFilename) {
 
         // If mask in region of interest isn't all black
         // output images
+        /*
         int presence = cv::sum(cv::sum(image_roi))[0];
         if (presence > 0){
             std::ostringstream fn;
@@ -120,9 +116,10 @@ void processVideo(char* videoFilename) {
             cv::imwrite(fn.str(), image_roi);
             out_index++;
         }
+        */
 
         // Wait for keyboard and pause playback if period is pressed 
-        keyboard = cv::waitKey(1);
+        keyboard = cv::waitKey(30);
         if ( (char)keyboard == '.' ) {
             keyboard = cv::waitKey(0);
         }

@@ -3,6 +3,8 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/videoio.hpp>
 #include <sstream>
+#include <iostream>
+#include "processing.hpp"
 
 void create_windows() {
     //create GUI windows
@@ -22,3 +24,31 @@ void add_frame_number(cv::VideoCapture vidcap, cv::Mat vidframe) {
     cv::putText(vidframe, frameNumberString.c_str(), cv::Point(15, 15),
             cv::FONT_HERSHEY_SIMPLEX, 0.5 , cv::Scalar(0,0,0));
 }
+
+
+cv::VideoCapture parse_video(char* filename){
+
+    cv::VideoCapture capture(filename);
+    if(!capture.isOpened()){
+        //error in opening the video input
+        std::cerr << "Unable to open video file: " << filename << std::endl;
+        std::exit(1);
+    }
+    return capture;
+    
+}
+
+cv::Mat next_frame(cv::VideoCapture cap){
+    cv::Mat frame;
+    //read the current frame
+    if(!cap.read(frame)) {
+        std::cerr << "Unable to read next frame." << std::endl;
+        std::cerr << "Video Finished: Exiting." << std::endl;
+        std::exit(0);
+    }
+
+    return frame;
+}
+
+
+
