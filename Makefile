@@ -30,10 +30,7 @@ clean:
 	@echo "$(RM) $(OUT)"; $(RM) $(OUT)
 
 test : $(TARGET)
-	./$(TARGET) test/40x-coastal-3rdchannel_1033-1221.avi
-
-test2 : $(TARGET)
-	python2.7 test2.py test/40x-coastal-3rdchannel_1033-1221.avi
+	./$(TARGET) test/test_vid.avi
 
 .PHONY: clean test
 
